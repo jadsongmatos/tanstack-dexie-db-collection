@@ -20,15 +20,13 @@ describe(`Vite Configuration`, () => {
     expect(configContent).toContain(`defineConfig`)
   })
 
-  it(`should merge with tanstack vite config`, () => {
+  it(`should use defineConfig from vitest/config`, () => {
     const configContent = readFileSync(configPath, `utf-8`)
 
-    // Should import tanstack config
-    expect(configContent).toContain(`from "@tanstack/config/vite"`)
-    expect(configContent).toContain(`tanstackViteConfig`)
-
-    // Should use mergeConfig
-    expect(configContent).toContain(`mergeConfig`)
+    // Should import defineConfig from vitest/config
+    expect(configContent).toMatch(
+      /import \{ defineConfig \} from ["']vitest\/config["']/,
+    )
   })
 
   it(`should configure test directory`, () => {
@@ -73,52 +71,11 @@ describe(`Vite Configuration`, () => {
     expect(configContent).toContain(`name: packageJson.name`)
   })
 
-  it(`should configure build entry point`, () => {
+  it(`should export default defineConfig`, () => {
     const configContent = readFileSync(configPath, `utf-8`)
 
-    // Should specify entry point for tanstack config
-    expect(configContent).toContain(`entry: \`./src/index.ts\``)
-    expect(configContent).toContain(`srcDir: \`./src\``)
-  })
-
-  it(`should import defineConfig and mergeConfig from vitest/config`, () => {
-    const configContent = readFileSync(configPath, `utf-8`)
-
-    // Should import both utilities
-    expect(configContent).toMatch(
-      /import \{ defineConfig, mergeConfig \} from ["']vitest\/config["']/
-    )
-  })
-
-  it(`should import package.json for dynamic name configuration`, () => {
-    const configContent = readFileSync(configPath, `utf-8`)
-
-    // Should import package.json
-    expect(configContent).toMatch(
-      /import packageJson from ["']\.\/package\.json["']/
-    )
-  })
-
-  it(`should configure test name using package.json name`, () => {
-    const configContent = readFileSync(configPath, `utf-8`)
-
-    // Test name should reference packageJson.name
-    expect(configContent).toMatch(/name:\s*packageJson\.name/)
-  })
-
-  it(`should export default merged configuration`, () => {
-    const configContent = readFileSync(configPath, `utf-8`)
-
-    // Should export default with mergeConfig
-    expect(configContent).toMatch(/export default\s+mergeConfig\(/)
-  })
-
-  it(`should pass valid options to tanstackViteConfig`, () => {
-    const configContent = readFileSync(configPath, `utf-8`)
-
-    // Should configure tanstackViteConfig with entry and srcDir
-    expect(configContent).toContain(`entry: \`./src/index.ts\``)
-    expect(configContent).toContain(`srcDir: \`./src\``)
+    // Should export default with defineConfig
+    expect(configContent).toMatch(/export default\s+defineConfig\(/)
   })
 
   it(`should configure coverage to include only src directory`, () => {

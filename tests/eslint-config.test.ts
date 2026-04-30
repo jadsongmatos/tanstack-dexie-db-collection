@@ -85,7 +85,7 @@ describe(`ESLint Configuration`, () => {
 
     // Should import tanstackConfig
     expect(configContent).toContain(
-      `import { tanstackConfig } from "@tanstack/config/eslint"`
+      `import { tanstackConfig } from "@tanstack/eslint-config"`
     )
 
     // Should spread tanstackConfig at the beginning of the config array
