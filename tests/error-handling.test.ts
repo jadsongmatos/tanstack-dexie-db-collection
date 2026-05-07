@@ -8,10 +8,10 @@ import { cleanupTestResources, createTestState } from "./test-helpers"
 describe(`Dexie Error Handling`, () => {
   afterEach(cleanupTestResources)
 
-  it(`handles codec parse failures gracefully`, async () => {
-    const dbName = `strict-test-${Date.now()}`
-    const db = new Dexie(dbName)
-    db.version(1).stores({ test: `&id, updatedAt` })
+it(`handles codec parse failures gracefully`, async () => {
+  const dbName = `strict-test-${Date.now()}`
+  const db = new Dexie(dbName)
+  db.version(1).stores({ test: `&id, updatedAt, _updatedAt, _createdAt` })
     await db.open()
 
     // Create a collection with strict codec validation
@@ -60,10 +60,10 @@ describe(`Dexie Error Handling`, () => {
     expect(strictCollection.get(`valid`)).toBeTruthy()
   })
 
-  it(`handles database connection failures`, async () => {
-    const dbName = `fail-test-${Date.now()}`
-    const db = new Dexie(dbName)
-    db.version(1).stores({ test: `&id, updatedAt` })
+it(`handles database connection failures`, async () => {
+  const dbName = `fail-test-${Date.now()}`
+  const db = new Dexie(dbName)
+  db.version(1).stores({ test: `&id, updatedAt, _updatedAt, _createdAt` })
 
     const options = dexieCollectionOptions<{ id: string; name: string }>({
       id: `fail-collection`,
