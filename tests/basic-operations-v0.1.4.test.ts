@@ -1,39 +1,16 @@
-// Ensure fake IndexedDB is available before any Dexie imports
 import "fake-indexeddb/auto"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 import { createCollection } from "@tanstack/db"
 import { dexieCollectionOptions } from "../src/index"
+import {
+  cleanupTestResources,
+  createdCollections,
+  createdDbs,
+} from "./test-helpers"
+
+afterEach(cleanupTestResources)
 
 describe(`Dexie Collection (TanStack DB v0.1.4)`, () => {
-  const collectionsToCleanup: Array<any> = []
-
-  beforeEach(() => {
-    // Ensure IndexedDB is available
-    if (typeof globalThis.indexedDB === `undefined`) {
-      throw new Error(`IndexedDB is not available in test environment`)
-    }
-  })
-
-  afterEach(async () => {
-    // Cleanup collections
-    for (const collection of collectionsToCleanup) {
-      try {
-        collection.destroy()
-      } catch {}
-    }
-    collectionsToCleanup.length = 0
-
-    // Cleanup IndexedDB databases
-    const idb = globalThis.indexedDB as any
-    if (idb && idb.databases) {
-      const databases = await idb.databases()
-      for (const db of databases) {
-        if (db.name) {
-          idb.deleteDatabase(db.name)
-        }
-      }
-    }
-  })
 
   it(`should create collection with v0.1.4 API`, () => {
     interface Todo {
@@ -73,10 +50,11 @@ describe(`Dexie Collection (TanStack DB v0.1.4)`, () => {
       syncMode: `eager`,
     })
 
-    collectionsToCleanup.push(collection)
+  createdCollections.push(collection)
+  createdDbs.push((collection.utils.getTable() as any).db)
 
-    expect(collection).toBeDefined()
-    expect(collection.id).toBe(`todos-create-v0.1.4`)
+  expect(collection).toBeDefined()
+  expect(collection.id).toBe(`todos-create-v0.1.4`)
   })
 
   it(`should insert and retrieve data with v0.1.4 API`, async () => {
@@ -97,49 +75,51 @@ describe(`Dexie Collection (TanStack DB v0.1.4)`, () => {
       syncMode: `eager`,
     })
 
-    collectionsToCleanup.push(collection)
+  createdCollections.push(collection)
+  createdDbs.push((collection.utils.getTable() as any).db)
 
-    // Wait for collection to be ready
-    await new Promise((resolve) => setTimeout(resolve, 100))
+  // Wait for collection to be ready
+  await new Promise((resolve) => setTimeout(resolve, 100))
 
-    // Insert data
-    await collection.insert({
-      id: `1`,
-      text: `Test todo`,
-      completed: false,
-    })
-
-    // Give sync time to process
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    const todo = collection.get(`1`)
-    expect(todo).toBeDefined()
-    expect(todo?.text).toBe(`Test todo`)
-    expect(todo?.completed).toBe(false)
+  // Insert data
+  await collection.insert({
+    id: `1`,
+    text: `Test todo`,
+    completed: false,
   })
 
-  it(`should support sequential ID generation with v0.1.4 API`, async () => {
-    interface Item {
-      id: number
-      name: string
-    }
+  // Give sync time to process
+  await new Promise((resolve) => setTimeout(resolve, 100))
 
-    const options = dexieCollectionOptions<Item>({
-      id: `items-sequential-v0.1.4`,
-      getKey: (item) => item.id,
-      startSync: true,
-    })
+  const todo = collection.get(`1`)
+  expect(todo).toBeDefined()
+  expect(todo?.text).toBe(`Test todo`)
+  expect(todo?.completed).toBe(false)
+})
 
-    const collection = createCollection<Item>({
-      ...options,
-      syncMode: `eager`,
-    })
+it(`should support sequential ID generation with v0.1.4 API`, async () => {
+  interface Item {
+    id: number
+    name: string
+  }
 
-    collectionsToCleanup.push(collection)
+  const options = dexieCollectionOptions<Item>({
+    id: `items-sequential-v0.1.4`,
+    getKey: (item) => item.id,
+    startSync: true,
+  })
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+  const collection = createCollection<Item>({
+    ...options,
+    syncMode: `eager`,
+  })
 
-    // Get first ID
+  createdCollections.push(collection)
+  createdDbs.push((collection.utils.getTable() as any).db)
+
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  // Get first ID
     const firstId = await collection.utils.getNextId()
     expect(firstId).toBeGreaterThan(0)
 
@@ -171,11 +151,12 @@ describe(`Dexie Collection (TanStack DB v0.1.4)`, () => {
       syncMode: `eager`,
     })
 
-    collectionsToCleanup.push(collection)
+  createdCollections.push(collection)
+  createdDbs.push((collection.utils.getTable() as any).db)
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+  await new Promise((resolve) => setTimeout(resolve, 100))
 
-    // Insert locally (bypasses onInsert handler)
+  // Insert locally (bypasses onInsert handler)
     await collection.utils.insertLocally({
       id: `local-1`,
       text: `Local todo`,
@@ -225,12 +206,13 @@ describe(`Dexie Collection (TanStack DB v0.1.4)`, () => {
       syncMode: `eager`,
     })
 
-    collectionsToCleanup.push(collection)
+  createdCollections.push(collection)
+  createdDbs.push((collection.utils.getTable() as any).db)
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+  await new Promise((resolve) => setTimeout(resolve, 100))
 
-    // Insert data
-    await collection.insert({
+  // Insert data
+  await collection.insert({
       id: `await-1`,
       text: `Await todo`,
     })

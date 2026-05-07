@@ -328,7 +328,7 @@ export function dexieCollectionOptions<
       // Prevent Node emitting unhandledRejection before we await it.
       void callP.catch(() => {})
 
-      let timeoutId: NodeJS.Timeout
+      let timeoutId: ReturnType<typeof setTimeout>
       const timeoutP = new Promise<never>((_, rej) => {
         timeoutId = setTimeout(() => rej(new Error(`persistence:timeout`)), tMs)
       })
