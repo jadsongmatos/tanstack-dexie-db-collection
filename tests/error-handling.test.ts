@@ -3,18 +3,24 @@ import { afterEach, describe, expect, it } from "vitest"
 import { createCollection } from "@tanstack/db"
 import Dexie from "dexie"
 import { dexieCollectionOptions } from "../src"
-import { cleanupTestResources, createTestState } from "./test-helpers"
+import {
+  cleanupTestResources,
+  createdCollections,
+  createdDbs,
+  waitForKey,
+  createTestState,
+} from "./test-helpers"
 
 describe(`Dexie Error Handling`, () => {
   afterEach(cleanupTestResources)
 
-it(`handles codec parse failures gracefully`, async () => {
-  const dbName = `strict-test-${Date.now()}`
-  const db = new Dexie(dbName)
-  db.version(1).stores({ test: `&id, updatedAt, _updatedAt, _createdAt` })
+  it(`handles codec parse failures gracefully`, async () => {
+    const dbName = `strict-test-${Date.now()}`
+    const db = new Dexie(dbName)
+    db.version(1).stores({ test: `&id, updatedAt, _updatedAt, _createdAt` })
     await db.open()
+    createdDbs.push(db)
 
-    // Create a collection with strict codec validation
     const strictOptions = dexieCollectionOptions<{ id: string; name: string }>({
       id: `strict-collection`,
       tableName: `test`,
@@ -35,14 +41,15 @@ it(`handles codec parse failures gracefully`, async () => {
     })
 
     const strictCollection = createCollection(strictOptions)
+    createdCollections.push(strictCollection)
+    await strictCollection.stateWhenReady()
 
-    // Insert valid data
     const validTx = strictCollection.insert({
       id: `valid`,
       name: `Valid Item`,
     })
     await validTx.isPersisted.promise
-    expect(strictCollection.get(`valid`)).toBeTruthy()
+    await waitForKey(strictCollection, `valid`)
 
     // Try to manually insert invalid data to the database
     await db.table(`test`).add({ id: `invalid`, count: 42 })
