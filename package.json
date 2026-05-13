@@ -25,6 +25,7 @@
     "jsdom": "^29.0.2",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3",
+    "@tanstack/vite-config": "^0.4.3",
     "vite": "^8.0.9",
     "vitest": "^4.1.5",
     "zod": "^4.3.6"
@@ -60,8 +61,8 @@
     "typescript"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "dev": "tsc -p tsconfig.build.json --watch",
+    "build": "vite build",
+    "dev": "vite build --watch",
     "lint": "eslint . --fix",
     "test": "npx vitest --run",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",

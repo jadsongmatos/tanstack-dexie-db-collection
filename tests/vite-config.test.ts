@@ -25,7 +25,7 @@ describe(`Vite Configuration`, () => {
 
     // Should import defineConfig from vitest/config
     expect(configContent).toMatch(
-      /import \{ defineConfig \} from ["']vitest\/config["']/,
+      /import \{ defineConfig[^}]*\} from ["']vitest\/config["']/,
     )
   })
 
@@ -75,7 +75,7 @@ describe(`Vite Configuration`, () => {
     const configContent = readFileSync(configPath, `utf-8`)
 
     // Should export default with defineConfig
-    expect(configContent).toMatch(/export default\s+defineConfig\(/)
+    expect(configContent).toMatch(/export default\s+(defineConfig|mergeConfig)\(/)
   })
 
   it(`should configure coverage to include only src directory`, () => {
