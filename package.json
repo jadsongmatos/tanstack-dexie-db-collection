@@ -32,8 +32,8 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/esm/index.d.ts",
+      "default": "./dist/esm/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -41,8 +41,8 @@
     "dist",
     "src"
   ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
+  "main": "./dist/esm/index.js",
+  "module": "./dist/esm/index.js",
   "author": "Himanshu Kumar Dutt <adasimobenio@gmail.com>",
   "license": "MIT",
   "repository": {
@@ -70,7 +70,7 @@
     "release": "bumpp && npm publish"
   },
   "sideEffects": false,
-  "types": "./dist/index.d.ts",
+  "types": "./dist/esm/index.d.ts",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
