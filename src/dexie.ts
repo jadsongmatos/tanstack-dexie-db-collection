@@ -65,6 +65,19 @@ export interface DexieCollectionConfig<
   onUpdate?: (params: UpdateMutationFnParams<TItem>) => Promise<any> | any
   onDelete?: (params: DeleteMutationFnParams<TItem>) => Promise<any> | any
   getKey: (item: TItem) => string | number
+
+  /**
+   * Optional callback used by `utils.insertWithServerKey()` to obtain the
+   * primary key that the SERVER will assign (typically a Postgres
+   * autoincrement Int). Returning the server key first lets the row be
+   * inserted locally already with the correct ID — avoiding the
+   * UUID-vs-server-Int mismatch in FK references later on.
+   *
+   * The callback must perform the server round-trip (e.g. an INSERT against
+   * Hasura) and return the resulting ID. If it throws, no local row is
+   * inserted.
+   */
+  getServerKey?: (item: TItem) => Promise<string | number>
 }
 
 // Enhanced utils interface
@@ -89,6 +102,32 @@ export interface DexieUtils extends UtilsRecord {
 
   // Sequential ID generation
   getNextId: () => Promise<number>
+
+  /**
+   * Inserts a row using the server-assigned primary key.
+   *
+   * Flow:
+   *  1. Calls `config.getServerKey(item)` to fetch the ID from the server.
+   *  2. Inserts the row LOCALLY with `{ ...item, id: serverId }` using
+   *     `insertLocally` (no extra push — the server already has the row).
+   *  3. Returns the persisted item with the server-assigned `id`.
+   *
+   * Throws if `getServerKey` is not configured, or if the callback throws.
+   * In the error case nothing is written to Dexie.
+   *
+   * Intended for tables whose PK is server-generated (e.g. Postgres
+   * autoincrement Int) and where the client cannot pre-assign a key
+   * without colliding with the server's sequence.
+   */
+  insertWithServerKey: <T = any>(item: T) => Promise<T>
+
+  /**
+   * True when `config.getServerKey` is configured — i.e. the PK is
+   * server-assigned and callers should prefer `insertWithServerKey()`
+   * over a client-generated key. Lets consumers branch without a
+   * try/catch around `insertWithServerKey`.
+   */
+  hasServerKey: boolean
 }
 
 /**
@@ -919,6 +958,29 @@ export function dexieCollectionOptions<
     },
 
     getNextId,
+
+    insertWithServerKey: async <T = any>(item: T): Promise<T> => {
+      if (!config.getServerKey) {
+        throw new Error(
+          `[tanstack-dexie-db-collection] insertWithServerKey() requires ` +
+            `'getServerKey' callback in collection config.`
+        )
+      }
+      // Fetch the server-assigned key BEFORE touching Dexie so a failure
+      // leaves no stale local row.
+      const serverId = await config.getServerKey(item as unknown as TItem)
+      const itemWithId = { ...(item as any), id: serverId }
+
+      // Mirror locally with the canonical server ID. Uses the same path as
+      // `insertLocally` so user-side schema validation runs and codecs apply.
+      const validated = validateSchema(itemWithId)
+      const serialized = serialize(validated, false)
+      await table.put({ ...serialized, id: serverId })
+      triggerRefresh()
+      return itemWithId as T
+    },
+
+    hasServerKey: typeof config.getServerKey === `function`,
   }
 
   return {
